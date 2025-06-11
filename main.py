@@ -214,7 +214,6 @@ def export_annotations(ann):
     except Exception as e:
         return None, f"❌ Error exporting: {e}"
 
-
 with gr.Blocks(css="""
     .progress-bar input[type=range]::-webkit-slider-thumb { background: #4CAF50; }
     .label-preview { font-size: 14px; color: #333; font-style: italic; margin-top: 4px; }
@@ -232,7 +231,9 @@ with gr.Blocks(css="""
         with gr.Row():
             label_file_upload = gr.File(label="Upload labels.txt", file_types=['.txt'])
             load_labels_btn = gr.Button("📥 Load Labels")
-
+        with gr.Row():
+            index_select=gr.Textbox(value="1",label="Select Index")
+            index_select_btn=gr.Button("Set Index")
 
     with gr.Row():
 
@@ -274,7 +275,9 @@ with gr.Blocks(css="""
         inputs=[label_file_upload],
         outputs=[labels_component]
     )
-
+    index_select_btn.click(fn=lambda idx, files, ann: navigate(0, int(idx)-1, files, ann),
+        inputs=[index_select, file_list, annotations],
+        outputs=[current_index, audio, file_status, file_display, labels_component, label_preview])
     load_btn.click(
         fn=handle_load,
         inputs=[dir_input],
