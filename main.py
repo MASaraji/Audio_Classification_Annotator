@@ -245,13 +245,13 @@ with gr.Blocks(css="""
                 button_prev = gr.Button("⏮ Previous", variant="secondary", elem_classes=["nav-btn"])
                 button_next = gr.Button("Next ⏭", variant="secondary", elem_classes=["nav-btn"])
 
+            save_btn = gr.Button("💾 Save Labels", variant="primary")
+            label_preview = gr.Markdown("*(No labels selected)*", elem_classes=["label-preview"])
             labels_component = gr.CheckboxGroup(
                 label="Labels",
                 choices=[]
             )
-            label_preview = gr.Markdown("*(No labels selected)*", elem_classes=["label-preview"])
 
-            save_btn = gr.Button("💾 Save Labels", variant="primary")
 
 
         with gr.Column(scale=1):
