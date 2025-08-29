@@ -214,6 +214,21 @@ def export_annotations(ann):
     except Exception as e:
         return None, f"❌ Error exporting: {e}"
 
+def save_and_next(labels, idx, files, ann):
+
+    preview, updated_ann, status, table = save_labels(labels, idx, files, ann)
+
+    new_idx, audio_file, file_status, filename, selected_labels, label_preview_text = navigate(
+        1, idx, files, updated_ann
+    )
+
+    return (
+        preview, updated_ann, status, table,
+        new_idx, audio_file, file_status, filename, selected_labels, label_preview_text
+    )
+
+
+
 with gr.Blocks(css="""
     .progress-bar input[type=range]::-webkit-slider-thumb { background: #4CAF50; }
     .label-preview { font-size: 14px; color: #333; font-style: italic; margin-top: 4px; }
@@ -244,9 +259,10 @@ with gr.Blocks(css="""
 
             with gr.Row():
                 button_prev = gr.Button("⏮ Previous", variant="secondary", elem_classes=["nav-btn"])
-                button_next = gr.Button("Next ⏭", variant="secondary", elem_classes=["nav-btn"])
-
-            save_btn = gr.Button("💾 Save Labels", variant="primary")
+                button_next = gr.Button("Next ⏭", variant="secondary", elem_classes=["nav-btn"],elem_id="btn-next")
+            with gr.Row():
+                save_btn = gr.Button("💾 Save Labels", variant="primary",elem_id="btn-save")
+                save_next_btn = gr.Button("💾➡️ Save + Next", variant="primary")
             label_preview = gr.Markdown("*(No labels selected)*", elem_classes=["label-preview"])
             labels_component = gr.CheckboxGroup(
                 label="Labels",
@@ -258,11 +274,11 @@ with gr.Blocks(css="""
         with gr.Column(scale=1):
             file_status = gr.Textbox(label="File Status", interactive=False)
             annotation_table = gr.Dataframe(
-    		headers=["filename", "labels"],
-    		value=[],
-    		interactive=False,
-    		wrap=True
-		)
+                    headers=["filename", "labels"],
+                    value=[],
+                    interactive=False,
+                    wrap=True
+                    )
 
             with gr.Row():
                 delete_btn = gr.Button("🗑 Delete Annotation", variant="stop")
@@ -271,58 +287,68 @@ with gr.Blocks(css="""
 
 
     load_labels_btn.click(
-        fn=update_label_choices,
-        inputs=[label_file_upload],
-        outputs=[labels_component]
-    )
+            fn=update_label_choices,
+            inputs=[label_file_upload],
+            outputs=[labels_component]
+            )
     index_select_btn.click(fn=lambda idx, files, ann: navigate(0, int(idx)-1, files, ann),
-        inputs=[index_select, file_list, annotations],
-        outputs=[current_index, audio, file_status, file_display, labels_component, label_preview])
+            inputs=[index_select, file_list, annotations],
+            outputs=[current_index, audio, file_status, file_display, labels_component, label_preview])
     load_btn.click(
-        fn=handle_load,
-        inputs=[dir_input],
-        outputs=[
-            file_list, current_index, annotations,
-            audio, file_status, file_display,
-            annotation_table
-        ]
-    )
+            fn=handle_load,
+            inputs=[dir_input],
+            outputs=[
+                file_list, current_index, annotations,
+                audio, file_status, file_display,
+                annotation_table
+                ]
+            )
+    save_next_btn.click(
+            fn=save_and_next,
+            inputs=[labels_component, current_index, file_list, annotations],
+            outputs=[
+                label_preview, annotations, file_status, annotation_table,  # save
+                current_index, audio, file_status, file_display, labels_component, label_preview  # next
+                ]
+            )
 
     save_btn.click(
-        fn=save_labels,
-        inputs=[labels_component, current_index, file_list, annotations],
-        outputs=[label_preview, annotations, file_status, annotation_table]
-    )
+            fn=save_labels,
+            inputs=[labels_component, current_index, file_list, annotations],
+            outputs=[label_preview, annotations, file_status, annotation_table]
+            )
 
     button_prev.click(
-        fn=lambda idx, files, ann: navigate(-1, idx, files, ann),
-        inputs=[current_index, file_list, annotations],
-        outputs=[current_index, audio, file_status, file_display, labels_component, label_preview]
-    )
+            fn=lambda idx, files, ann: navigate(-1, idx, files, ann),
+            inputs=[current_index, file_list, annotations],
+            outputs=[current_index, audio, file_status, file_display, labels_component, label_preview]
+            )
 
     button_next.click(
-        fn=lambda idx, files, ann: navigate(1, idx, files, ann),
-        inputs=[current_index, file_list, annotations],
-        outputs=[current_index, audio, file_status, file_display, labels_component, label_preview]
-    )
+            fn=lambda idx, files, ann: navigate(1, idx, files, ann),
+            inputs=[current_index, file_list, annotations],
+            outputs=[current_index, audio, file_status, file_display, labels_component, label_preview]
+            )
 
     labels_component.change(
-        fn=lambda labels: ", ".join(labels) if labels else "*(No labels selected)*",
-        inputs=labels_component,
-        outputs=label_preview
-    )
+            fn=lambda labels: ", ".join(labels) if labels else "*(No labels selected)*",
+            inputs=labels_component,
+            outputs=label_preview
+            )
 
     delete_btn.click(
-        fn=lambda idx, files, ann: delete_annotation(idx, files, ann),
-        inputs=[current_index, file_list, annotations],
-        outputs=[file_status, annotations, annotation_table]
-    )
+            fn=lambda idx, files, ann: delete_annotation(idx, files, ann),
+            inputs=[current_index, file_list, annotations],
+            outputs=[file_status, annotations, annotation_table]
+            )
 
     export_btn.click(
-        fn=lambda ann: export_annotations(ann),
-        inputs=[annotations],
-        outputs=[export_file, file_status]
-    )
+            fn=lambda ann: export_annotations(ann),
+            inputs=[annotations],
+            outputs=[export_file, file_status]
+            )
+
+
 
 if __name__ == "__main__":
     demo.launch()
